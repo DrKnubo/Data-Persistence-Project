@@ -1,3 +1,5 @@
+
+ 
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,13 +11,11 @@ public class MainManager : MonoBehaviour
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
-
     public Text ScoreText;
-    public GameObject GameOverText;
-    
+    public Text LeaderText;
+    public GameObject GameOverText;    
     private bool m_Started = false;
-    private int m_Points;
-    
+    private int m_Points;    
     private bool m_GameOver = false;
 
     
@@ -36,6 +36,14 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        //Set the leader score from previous results 
+        if(DataManager.HasInstance && DataManager.Instance.PreviousSessionData.highScore != 0)
+        {
+            UpdateLeaderScore(DataManager.Instance.PreviousSessionData.playerName, DataManager.Instance.PreviousSessionData.highScore);
+        }
+
+        ScoreText.text = DataManager.Instance.ActualPlayerName + $" Score : {m_Points}";
     }
 
     private void Update()
@@ -65,12 +73,22 @@ public class MainManager : MonoBehaviour
     void AddPoint(int point)
     {
         m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        ScoreText.text = DataManager.Instance.ActualPlayerName + $" Score : {m_Points}";
     }
 
     public void GameOver()
-    {
-        m_GameOver = true;
+    {        m_GameOver = true;
         GameOverText.SetActive(true);
+
+        if(DataManager.HasInstance &&  (m_Points > DataManager.Instance.PreviousSessionData.highScore) )
+        {
+            //Store the current score in a json and update the leaderboard
+            DataManager.Instance.SaveSessionToFile(m_Points);
+            UpdateLeaderScore(DataManager.Instance.ActualPlayerName, m_Points);
+        }
+    }
+    void UpdateLeaderScore(string name, int score)
+    {
+        LeaderText.text = "Best Score: "+name +" : " + score;
     }
 }
